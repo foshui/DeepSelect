@@ -1,4 +1,5 @@
 import os
+import platform
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -200,6 +201,7 @@ def build_on_ascend_platform():
             "Please set ASCEND_HOME_PATH to the root of your CANN installation "
             "(e.g. /usr/local/Ascend/cann-9.2.0)."
         )
+    asc_platform = Path(asc_home) / f"{platform.machine()}-linux"
 
     class AscendBuildExtension(BuildExtension):
         def build_extensions(self):
@@ -234,7 +236,7 @@ def build_on_ascend_platform():
                     f"-D_GLIBCXX_USE_CXX11_ABI={int(torch.compiled_with_cxx11_abi())}",
                     # `kernel_operator.h` lives here; kerutils' common.h detects it to flip
                     # KERUTILS_IS_BUILD_ON_ASCEND on.
-                    "-isystem", str(Path(asc_home) / "aarch64-linux" / "asc" / "include"),
+                    "-isystem", str(asc_platform / "asc" / "include"),
                     "-isystem", str(torch_npu_root / "include"),
                     "-isystem", str(torch_npu_root / "include/third_party/acl/inc"),
                     # Disable argument preload at the beginning of kernels to avoid a hardware bug
@@ -244,7 +246,7 @@ def build_on_ascend_platform():
             extra_link_args=[
                 "-Wl,-Bsymbolic-functions",
                 # Otherwise the linker complains about "undefined symbol: ReportAscendProf" in CANN 9.2.0
-                str(Path(asc_home) / "aarch64-linux" / "lib64" / "libascendc_runtime.a"),
+                str(asc_platform / "lib64" / "libascendc_runtime.a"),
             ],
         )
     ]
